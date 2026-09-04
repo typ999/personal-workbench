@@ -29,6 +29,15 @@
       try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){}
     }
   }
+  // 多端同步：Supabase SDK 加载（处理邮箱 OTP 回调时不丢失 auth session）
+  var s1 = document.createElement('script');
+  s1.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  s1.defer = true;
+  document.head.appendChild(s1);
+  var s2 = document.createElement('script');
+  s2.src = 'assets/supabase-sync.js';
+  s2.defer = true;
+  document.head.appendChild(s2);
 
   var cur = '';
   function pick(){

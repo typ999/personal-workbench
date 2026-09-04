@@ -42,3 +42,6 @@ backups/
 __pycache__/
 *.pyc
 coverage/
+
+.vercel
+.env*

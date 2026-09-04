@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>个人工作台 · 正在跳转…</title>
+<meta http-equiv="refresh" content="0; url=workbench.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  html,body{margin:0;height:100%;display:grid;place-items:center;background:#f5f3ef;font-family:system-ui,-apple-system,"PingFang SC",sans-serif;color:#555}
+  .m{text-align:center}
+  a{color:#6BA88F}
+</style>
+</head>
+<body>
+  <div class="m">
+    <div style="font-size:28px;margin-bottom:10px">🏠</div>
+    <div>正在进入个人工作台…</div>
+    <div style="margin-top:12px;font-size:13px;color:#888">
+      如未自动跳转，请<a href="workbench.html">点此手动进入</a>
+    </div>
+  </div>
+<script>
+  location.replace("workbench.html" + location.hash + location.search);
+</script>
+</body>
+</html>

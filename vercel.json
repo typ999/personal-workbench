@@ -3,7 +3,6 @@
   "projectSettings": {
     "framework": null,
     "buildCommand": null,
-    "outputDirectory": ".",
     "installCommand": null,
     "rootDirectory": "."
   },
@@ -64,9 +63,7 @@
     }
   },
   "crons": [
-    { "path": "/api/push/morning",    "schedule": "30 0 * * *",  "description": "UTC 00:30 = 中国 08:30 · 晨间套餐推送" },
-    { "path": "/api/push/week-report","schedule": "0 14 * * 0",   "description": "UTC 14:00 周日 = 中国周日 22:00 · 每周周报生成+推送" },
-    { "path": "/api/push/reminders",  "schedule": "0,30 * * * *","description": "每 30 分钟扫描到期提醒推送（T-0/T-advanceDays）" },
-    { "path": "/api/push/coins-milestone","schedule":"5 2,10,18 * * *","description":"每天 3 次检查用户是否达到金币里程碑（10/20/50/100），若达到则推送" }
+    { "path": "/api/push/morning",      "schedule": "30 0 * * *" },
+    { "path": "/api/push/week-report",  "schedule": "0 14 * * 0" }
   ]
 }

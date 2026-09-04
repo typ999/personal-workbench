@@ -37,6 +37,10 @@
     });
   })();
 </script>
+<!-- ================= 多端同步 + Supabase SDK v2 ================= -->
+<!-- 说明（经验 2321696）：CDN 加载 Supabase JS SDK + 同步适配层。仅 anon public key 公开，由 RLS 行级权限保护，安全。 -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="assets/supabase-sync.js"></script>
 <style>
   /* ============================================================
      THEME TOKENS — 一处改色，整站换肤（简约·墨色中性默认）
@@ -3408,6 +3412,11 @@ const store = {
   },
   save(){ localStorage.setItem(CONFIG.storageKey, JSON.stringify(data)); },
 };
+/* ===== 多端同步适配：把 store / data / CONFIG 挂全局 + Hook 双写 ===== */
+window.CONFIG = CONFIG;
+window.store = window.Sync && typeof window.Sync.hookStore === "function"
+  ? window.Sync.hookStore(store)
+  : store;
 /* 每日学习五分类打卡：每日 0:00 自动重置（按 ISO 日期对比） */
 function checkDailyLearnReset(){
   const DEFAULT_DL_ITEMS=[
@@ -3436,6 +3445,8 @@ function checkDailyLearnReset(){
   }
 }
 let data = store.load();
+window.data = data;
+window.lastModule = window.lastModule || null;
 let clockTimer = null;
 let pomo = { running:false, remain:25*60, total:25*60 };   // 番茄钟状态（内存态，跨渲染保留）
 /* ===== Phase 2: todo 字段向后兼容补全 ===== */
@@ -9953,11 +9964,11 @@ function renderSettingsView(key){
     <div class="settings-row"><label>安静时段结束</label><input type="time" value="${(n.quietHours||{}).end||'07:00'}" class="nb-search" style="width:110px" id="set-quiet-end"/></div></div></div>`;
   const aboutHTML=`<div class="settings-section about-card"><h3>${icon("settings",18)} 关于</h3>
     <div class="about-logo">⚙️</div><div class="about-version">个人工作台 v2.1.0</div>
-    <div class="about-desc">原生 HTML/CSS/JS · localStorage 持久化</div>
-    <ul class="about-changelog"><li>v2.1.0 — Phase 12 工作笔记 + 设置</li><li>v2.0.0 — Phase 11 项目看板</li><li>v1.9.0 — Phase 10 成就殿堂</li><li>v1.8.0 — Phase 9 智能提醒中心</li><li>v1.7.0 — Phase 8 时光胶囊</li></ul>
+    <div class="about-desc">原生 HTML/CSS/JS · localStorage + Supabase 云端多端同步</div>
+    <ul class="about-changelog"><li>v2.1.0 — Phase 12 工作笔记 + 设置 · 邮箱登录同步</li><li>v2.0.0 — Phase 11 项目看板</li><li>v1.9.0 — Phase 10 成就殿堂</li><li>v1.8.0 — Phase 9 智能提醒中心</li><li>v1.7.0 — Phase 8 时光胶囊</li></ul>
     <button class="btn" id="set-pwa" style="margin-top:12px">${icon("download",14)} 安装 PWA</button></div>`;
   $("#screen").innerHTML=`<div class="greet"><div><h1>${m.name}</h1><p>${m.desc}</p></div></div>
-    <div style="margin-top:12px"><div class="settings-view">${pushCardHTML}${accountHTML}${dataHTML}${appearHTML}${notifHTML}${aboutHTML}</div></div>`;
+    <div style="margin-top:12px"><div class="settings-view">${window.Sync ? window.Sync.settingsCardHTML() : ''}${pushCardHTML}${accountHTML}${dataHTML}${appearHTML}${notifHTML}${aboutHTML}</div></div>`;
   wireSettings(key);
 }
 
