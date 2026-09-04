@@ -69,9 +69,23 @@
     return supabase;
   };
 
-  // 尝试初始化（CDN 未加载成功就静默降级，不影响本地使用）
+  // 尝试初始化 + Hook store（CDN 未加载成功就静默降级，不影响本地使用）
+  // Bug fix: supabase-sync.js 是 defer 加载，晚于 HTML 内联脚本执行，
+  //         所以内联脚本里的 window.Sync hookStore 检查会失败。必须在这里重新 Hook。
   window.addEventListener("DOMContentLoaded", () => {
     try { initSupabase(); } catch (e) { lastError = e.message; }
+    // 重新 Hook store（此时 window.store 已由内联脚本定义，但还没被 Hook）
+    if (window.store && typeof window.store.save === "function" && !window.store.__syncHooked) {
+      hookStore(window.store);
+      window.store.__syncHooked = true;
+    }
+    // 如果已登录，2 秒后自动拉取一次云端数据
+    setTimeout(async () => {
+      try {
+        const u = await currentUser();
+        if (u) { await pullCloud(false); await flushPending(); }
+      } catch (e) { /* 静默 */ }
+    }, 2000);
   });
 
   // ---------------- 登录状态 ----------------
@@ -239,13 +253,15 @@
     const storageKey = (window.CONFIG && window.CONFIG.storageKey) || "workbench-personal-v2";
     try {
       localStorage.setItem(storageKey, JSON.stringify(blob));
-      // 重新触发加载：调用原 store.load + 刷新 UI（调用 renderHome 若存在）
-      if (window.store && typeof window.store.load === "function") {
-        const newData = window.store.load();
-        window.data = newData;
-        if (typeof window.renderHome === "function") window.renderHome();
-        if (typeof window.renderModule === "function" && window.lastModule) window.renderModule(window.lastModule);
+      // Bug fix: 不能只更新 window.data，因为 HTML 闭包里的 let data 还指向旧对象。
+      //   解决方案：把新数据的属性原地拷贝到 window.data 上（同一引用，闭包也能看到）
+      if (window.data && typeof window.data === "object") {
+        Object.keys(window.data).forEach(k => { if (!(k in blob)) delete window.data[k]; });
+        Object.assign(window.data, blob);
       }
+      // 重新渲染
+      if (typeof window.renderHome === "function") window.renderHome();
+      if (typeof window.renderModule === "function" && window.lastModule) window.renderModule(window.lastModule);
       writeLS(LS_LAST_PULL_MS, nowMs());
     } catch (e) { throw new Error("写入本地失败：" + e.message); }
   }
