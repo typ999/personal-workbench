@@ -29,6 +29,21 @@
   };
   const writeLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   const removeLS = (k) => { try { localStorage.removeItem(k); } catch (e) {} };
+  // 醒目 toast 提示（3 秒自动消失，不依赖任何 UI 框架）
+  function showToast(text) {
+    let t = document.getElementById("__sync_toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "__sync_toast";
+      t.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;z-index:99999999;max-width:90vw;text-align:center;line-height:1.6;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-family:system-ui,-apple-system,sans-serif;";
+      document.body.appendChild(t);
+    }
+    t.textContent = text;
+    t.style.display = "block";
+    t.style.opacity = "1";
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity 0.4s"; setTimeout(() => t.style.display = "none", 400); }, 3000);
+  }
 
   // ---------------- Supabase 客户端（延迟加载 + 降级） ----------------
   let supabase = null;
@@ -50,15 +65,15 @@
         // 监听认证状态变化（首次登录 / OTP 回调 / 切换账号）
         supabase.auth.onAuthStateChange((evt, session) => {
           if (evt === "SIGNED_IN" && session && session.user) {
-            // 登录成功后 500ms 拉一次云端同步
-            setTimeout(() => pullCloud(true), 500);
+            // 登录成功：显示醒目提示 + 拉云端 + 刷新设置卡片
+            showToast("✅ 登录成功：" + (session.user.email || "") + "  正在同步云端数据…");
+            setTimeout(() => pullCloud(true).then(()=>showToast("✅ 云端同步完成！去设置→多端同步可推送/拉取")).catch(()=>{}), 500);
           }
           if (evt === "SIGNED_OUT") {
-            // 退出登录时清空本地同步时间戳，下次登录时强制对比一次
             removeLS(LS_LAST_PUSH_MS);
             removeLS(LS_LAST_PULL_MS);
+            showToast("已退出登录");
           }
-          // 触发 UI 刷新（设置页卡片会监听）
           document.dispatchEvent(new CustomEvent("sync:auth-change", { detail: { evt, session } }));
         });
       } catch (e) {
@@ -105,18 +120,21 @@
     let email = "";
     if (supabase) {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
+        // 重试：SDK 可能还在从 URL hash 解析 session（首次登录回调时）
+        if (!session) {
+          const mask = ensureSyncModal();
+          mask.style.display = "grid";
+          mask.innerHTML = `<div style="background:#fff;border-radius:14px;padding:30px;text-align:center;color:#888;font-family:system-ui,sans-serif;">⏳ 正在检查登录状态…</div>`;
+          await new Promise(r => setTimeout(r, 1500));
+          ({ data: { session } } = await supabase.auth.getSession());
+        }
         if (session && session.user) {
           isLoggedIn = true;
           email = session.user.email || "";
         }
       } catch (e) {}
     }
-    // 先显示 loading 态
-    const mask = ensureSyncModal();
-    mask.style.display = "grid";
-    mask.innerHTML = `<div style="background:#fff;border-radius:14px;padding:30px;text-align:center;color:#888;font-family:system-ui,sans-serif;">⏳ 正在检查登录状态…</div>`;
-    // 已登录：显示退出登录 + 同步状态
     showSyncModal(isLoggedIn ? "logged" : "login", email);
   }
 
@@ -152,7 +170,7 @@
                  style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;margin-bottom:12px;outline:none;">
           <button id="__sync_send_otp"
                   style="width:100%;padding:11px;border:none;border-radius:10px;background:#6BA88F;color:#fff;font-weight:600;font-size:14px;cursor:pointer;">
-            发送登录验证码
+            发送登录链接
           </button>
           <div id="__sync_msg" style="margin-top:12px;font-size:12px;color:#888;line-height:1.6;min-height:1.5em;"></div>
           <div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px;text-align:right;">
@@ -215,7 +233,7 @@
           });
           if (error) throw error;
           msg.style.color = "#4f8370";
-          msg.innerHTML = "✅ 已发送，请打开邮箱点击邮件内的 <b>“Log in / 登录链接”</b>，会自动跳回本页面并登录。<br><span style=\"color:#888;font-size:11px\">💡 没收到邮件？1）检查垃圾箱 / 推广邮件；2）免费版邮件每天约 100 封限额，可能发送过多需要次日重试。</span>";
+          msg.innerHTML = "✅ 已发送登录链接，请打开邮箱点击邮件里的 <b>"Log in"</b> 按钮即可登录。<br><span style=\"color:#888;font-size:11px\">💡 没收到邮件？1）检查垃圾箱 / 推广邮件；2）免费版邮件每天约 100 封限额。</span>";
         } catch (e) {
           msg.style.color = "#c05050"; msg.textContent = "发送失败：" + e.message;
         }

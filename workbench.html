@@ -29,26 +29,40 @@
       try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){}
     }
   }
-  // 多端同步：Supabase SDK 加载（处理邮箱 OTP 回调时不丢失 auth session）
-  var s1 = document.createElement('script');
-  s1.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  s1.defer = true;
-  document.head.appendChild(s1);
-  var s2 = document.createElement('script');
-  s2.src = 'assets/supabase-sync.js';
-  s2.defer = true;
-  document.head.appendChild(s2);
 
   var cur = '';
   function pick(){
     return window.innerWidth < BREAK ? MOBILE : DESKTOP;
   }
 
-  // 首次进入：直接 replace（不留 history 条目）
-  var target = pick();
-  // 用 hash/query 参数透传（如 #todo? 或 ?v=2）
-  var suffix = location.hash || '';
-  location.replace(target + suffix);
+  // 如果 URL hash 里有 Supabase 登录回调（access_token / error_description），
+  // 必须等 Supabase SDK 加载并处理完 session 后再跳转，否则 session 会丢失。
+  var hasAuthHash = /access_token|refresh_token|error_description|type=/.test(location.hash || '');
+
+  function doRedirect(){
+    var target = pick();
+    var suffix = location.hash || '';
+    location.replace(target + suffix);
+  }
+
+  if(hasAuthHash){
+    // 先把 SDK 加载好，等它处理完 URL 里的 session（存到 localStorage）再跳
+    document.querySelector('.ld').innerHTML = '<div>⏳ 正在完成登录…</div>';
+    var s1 = document.createElement('script');
+    s1.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s1.onload = function(){
+      // SDK 加载完，再给 1.5 秒让它解析 URL hash 并保存 session
+      setTimeout(doRedirect, 1500);
+    };
+    s1.onerror = function(){
+      // CDN 加载失败也跳转（不阻塞用户）
+      doRedirect();
+    };
+    document.head.appendChild(s1);
+  } else {
+    // 普通访问：直接跳转（不留 history 条目）
+    doRedirect();
+  }
 
   // 旋转设备/手动拖拽窗口跨断点时自动切换（仅限已跳转后的交互；这里在跳转前不会触发）
   var lastW = window.innerWidth;
