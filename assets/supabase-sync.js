@@ -99,16 +99,25 @@
   }
 
   // ---------------- UI：登录弹层 ----------------
-  function openLoginModal() {
+  async function openLoginModal() {
     initSupabase();
-    const isLoggedIn = !!supabase && !!getCachedSession();
+    let isLoggedIn = false;
+    let email = "";
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          isLoggedIn = true;
+          email = session.user.email || "";
+        }
+      } catch (e) {}
+    }
+    // 先显示 loading 态
+    const mask = ensureSyncModal();
+    mask.style.display = "grid";
+    mask.innerHTML = `<div style="background:#fff;border-radius:14px;padding:30px;text-align:center;color:#888;font-family:system-ui,sans-serif;">⏳ 正在检查登录状态…</div>`;
     // 已登录：显示退出登录 + 同步状态
-    showSyncModal(isLoggedIn ? "logged" : "login");
-  }
-
-  function getCachedSession() {
-    try { return readLS("sb-" + SUPABASE_URL.split("https://")[1].split(".")[0] + "-auth-token", null); }
-    catch (e) { return null; }
+    showSyncModal(isLoggedIn ? "logged" : "login", email);
   }
 
   // 创建弹层 DOM（用内联样式，不依赖 HTML 里已有的 overlay 结构，跨 desktop/mobile 都能用）
@@ -123,7 +132,7 @@
     return m;
   }
 
-  function showSyncModal(mode) {
+  function showSyncModal(mode, loggedInEmail) {
     const mask = ensureSyncModal();
     mask.style.display = "grid";
     let html = "";
@@ -151,8 +160,7 @@
           </div>
         </div>`;
     } else {
-      const sess = getCachedSession();
-      const email = (sess && sess.user && sess.user.email) || "已登录用户";
+      const email = loggedInEmail || "已登录用户";
       const lastPush = readLS(LS_LAST_PUSH_MS, 0);
       const lastPull = readLS(LS_LAST_PULL_MS, 0);
       const fmt = (ms) => ms ? new Date(ms).toLocaleString("zh-CN") : "还没同步过";
