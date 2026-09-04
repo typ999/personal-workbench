@@ -1,6 +1,5 @@
 name: Deploy Personal Workbench to GitHub Pages
-# 经验 2306979：使用 peaceiris/actions-gh-pages v4（ubuntu-latest）避免 Git smart-HTTP 传输超时。
-# 触发器：push 到 main 分支 / 手动触发（workflow_dispatch）
+# 官方部署方式：actions/deploy-pages（不依赖 git push，用 GitHub API 部署，避免 exit code 128）
 on:
   push:
     branches: [ main ]
@@ -28,21 +27,48 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Install & deploy to gh-pages (经验 2306979：v4 + force_orphan，规避 smart-HTTP 超时)
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build artifact
+        run: |
+          mkdir -p ./_site
+          # 只复制需要部署的静态文件（排除 .github / supabase / api / scripts / node_modules / *.ps1 等）
+          rsync -av \
+            --exclude='.github' \
+            --exclude='.trae' \
+            --exclude='supabase' \
+            --exclude='api' \
+            --exclude='scripts' \
+            --exclude='node_modules' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='vercel.json' \
+            --exclude='.gitignore' \
+            --exclude='_*.ps1' \
+            --exclude='_*.bat' \
+            --exclude='merge*.ps1' \
+            --exclude='*.tmp*' \
+            --exclude='DEPLOY-PHASE2-操作手册.html' \
+            --exclude='personal-workbench-prd-v2.1.html' \
+            --exclude='_syntax_check.html' \
+            --exclude='_tmp-deploy-check.html' \
+            --exclude='.git' \
+            ./ ./_site/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
-          force_orphan: true
-          # 经验 2306979：排除不需要部署的文件（避免敏感/临时/构建脚本上传）
-          exclude_assets: '.github,_*.ps1,_*.bat,.trae,supabase,api,scripts,node_modules,package.json,package-lock.json,vercel.json,DEPLOY-PHASE2-操作手册.html,personal-workbench-prd-v2.1.html,.gitignore,*.tmp*,_syntax_check.html,_tmp-deploy-check.html,merge*.ps1'
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          path: ./_site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
