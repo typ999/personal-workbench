@@ -15,7 +15,7 @@
 
   /* ============= 🔐 用户部署前必须替换成自己项目的值（Project Settings → API） ============= */
   const SUPABASE_URL = "https://dfurltpxfgmpvucqtylg.supabase.co";   // ← 替换成你自己的 Project URL
-  const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdXJscHhmZ21wdnVjcXR5bGciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcxNTk5MDAwMCwiZXhwIjoyMDMxNTY2MDAwfQ.placeholder-replace-me"; // ← 替换成你自己的 anon public key（Project Settings → API → anon public）
+  const SUPABASE_ANON_PUBLIC_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmdXJsdHB4ZmdtcHZ1Y3F0eWxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NjQwNTgsImV4cCI6MjEwNDA0MDA1OH0.hf5euqq1IRsQB6xt70T0iqcsDPkPGdT4rPQLuM6NQKc"; // anon public key（RLS 保护，公开安全）
   /* ============= 🔐 END 可替换区域 =========================================================== */
 
   const LS_PENDING_KEY = "__sync_pending_queue";
