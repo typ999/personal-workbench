@@ -1,0 +1,32 @@
+{
+  "name": "personal-workbench",
+  "version": "2.1.0",
+  "private": true,
+  "description": "个人工作台 · 全场景生活效率整合平台（Phase 2：Vercel 静态部署 + Supabase + Web Push 系统级通知）",
+  "scripts": {
+    "deploy:login": "vercel login",
+    "deploy:link": "vercel link --yes",
+    "deploy:dev": "vercel",
+    "deploy:prod": "vercel --prod --yes",
+    "deploy:force": "vercel --prod --yes --force",
+    "db:login": "supabase login",
+    "db:init": "supabase init --with-vscode-workspace",
+    "db:link": "supabase link --project-ref",
+    "db:migrate": "supabase db reset && supabase db push",
+    "db:push": "supabase db push",
+    "gen:vapid": "node scripts/gen-vapid.mjs",
+    "prettier:check": "echo \"(placeholder, 可选) 跳过静态项目代码检查\""
+  },
+  "devDependencies": {
+    "vercel": "^37.6.0",
+    "supabase": "^1.207.9"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "web-push": "^3.6.7"
+  },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "packageManager": "pnpm@9"
+}

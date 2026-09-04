@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh" data-trae-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人工作台</title>
+<meta name="theme-color" content="#6BA88F">
+<link rel="manifest" href="manifest.json">
+<style>
+  html,body{margin:0;height:100%;display:grid;place-items:center;background:var(--bg,#f5f3ef);font-family:system-ui,-apple-system,sans-serif}
+  .ld{text-align:center;color:#888}
+  .ld svg{margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="ld">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6BA88F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10.5V19h12v-8.5"/></svg>
+  <div>正在加载…</div>
+</div>
+<script>
+(function(){
+  var BREAK = 900;
+  var DESKTOP = 'workbench-desktop.html';
+  var MOBILE  = 'workbench-mobile.html';
+
+  // PWA 注册（http/https 协议下）
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    if('serviceWorker' in navigator){
+      try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){}
+    }
+  }
+
+  var cur = '';
+  function pick(){
+    return window.innerWidth < BREAK ? MOBILE : DESKTOP;
+  }
+
+  // 首次进入：直接 replace（不留 history 条目）
+  var target = pick();
+  // 用 hash/query 参数透传（如 #todo? 或 ?v=2）
+  var suffix = location.hash || '';
+  location.replace(target + suffix);
+
+  // 旋转设备/手动拖拽窗口跨断点时自动切换（仅限已跳转后的交互；这里在跳转前不会触发）
+  var lastW = window.innerWidth;
+  var timer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(timer);
+    timer = setTimeout(function(){
+      var w = window.innerWidth;
+      if((w < BREAK) !== (lastW < BREAK)){
+        lastW = w;
+        location.replace(pick() + location.hash);
+      }
+    }, 350);
+  });
+})();
+</script>
+</body>
+</html>

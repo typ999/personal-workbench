@@ -1,0 +1,29 @@
+{
+  "name": "个人工作台",
+  "short_name": "工作台",
+  "description": "全场景生活效率整合平台 — 待办/学习/财富/健康/情侣/提醒/金币 七合一",
+  "start_url": "/workbench-mobile.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F8F9F5",
+  "theme_color": "#6BA88F",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["productivity","lifestyle","utilities"],
+  "gcm_sender_id": "103953800507",
+  "prefer_related_applications": false,
+  "protocol_handlers": [
+    {"protocol":"web+wb","url":"/workbench-mobile.html?open=%s"}
+  ],
+  "shortcuts": [
+    {"name":"新建待办","short_name":"待办","description":"快速新建每日计划","url":"/workbench-mobile.html?action=new-todo","icons":[{"src":"data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='20' fill='%236BA88F'/><path d='M30 48l12 12 24-24' stroke='white' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),"sizes":"96x96","type":"image/svg+xml"}]},
+    {"name":"记一笔","short_name":"记一笔","description":"快速记账","url":"/workbench-mobile.html?action=new-wealth-tx","icons":[{"src":"data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='20' fill='%23D4A24C'/><circle cx='48' cy='48' r='20' stroke='white' stroke-width='6' fill='none'/><text x='48' y='55' font-size='22' font-weight='900' text-anchor='middle' fill='white' dominant-baseline='middle'>¥</text></svg>"),"sizes":"96x96","type":"image/svg+xml"}]},
+    {"name":"灵感补给站","short_name":"灵感","description":"打开灵感补给站","url":"/workbench-mobile.html#inspirit","icons":[{"src":"data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='20' fill='%23E76F51'/><path d='M48 20a26 26 0 00-14 46c3 3 4 6 4 10h20c0-4 1-7 4-10a26 26 0 00-14-46z' stroke='white' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),"sizes":"96x96","type":"image/svg+xml"}]}
+  ],
+  "icons": [
+    {"src": "data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%236BA88F'/><text x='96' y='130' font-size='100' text-anchor='middle' fill='white' font-family='Segoe UI Emoji,Apple Color Emoji,Arial' dominant-baseline='middle'>🌿</text></svg>"), "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable"},
+    {"src": "data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%236BA88F'/><text x='256' y='350' font-size='260' text-anchor='middle' fill='white' font-family='Segoe UI Emoji,Apple Color Emoji,Arial' dominant-baseline='middle'>🌿</text></svg>"), "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable"},
+    {"src": "data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='20' fill='%236BA88F'/><text x='48' y='65' font-size='50' text-anchor='middle' fill='white' font-family='Segoe UI Emoji,Apple Color Emoji,Arial' dominant-baseline='middle'>🌿</text></svg>"), "sizes": "96x96", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

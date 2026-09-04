@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html><head><title>Syntax Check</title></head><body>
+<pre id="out">Checking...</pre>
+<script>
+var xhr = new XMLHttpRequest();
+xhr.open('GET', 'workbench-desktop.html?nocache=' + Date.now(), false);
+try {
+  xhr.send();
+  var html = xhr.responseText;
+  var re = /<script[^>]*>([\s\S]*?)<\/script>/g;
+  var match;
+  var idx = 0;
+  var out = document.getElementById('out');
+  var result = '';
+  while ((match = re.exec(html)) !== null) {
+    idx++;
+    var code = match[1];
+    if (code.trim().length < 10) continue;
+    try {
+      new Function(code);
+      result += 'Script block ' + idx + ': OK (' + code.length + ' chars)\n';
+    } catch (e) {
+      result += 'Script block ' + idx + ': ERROR: ' + e.message + '\n';
+      // Try to find the error line
+      var lines = code.split('\n');
+      // Check last few lines for issues
+      var startLine = Math.max(0, lines.length - 15);
+      for (var j = startLine; j < lines.length; j++) {
+        result += '  L' + (j+1) + ': ' + lines[j].substring(0, 200) + '\n';
+      }
+      // Also try to narrow down by binary search
+      var low = 0, high = lines.length;
+      while (low < high) {
+        var mid = Math.floor((low + high) / 2);
+        var partial = lines.slice(0, mid).join('\n');
+        try {
+          new Function(partial);
+          low = mid + 1;
+        } catch (e2) {
+          // Check if same error
+          if (e2.message === e.message || e2.name === 'SyntaxError') {
+            high = mid;
+          } else {
+            low = mid + 1;
+          }
+        }
+      }
+      result += '  >>> Error around line ' + low + ':\n';
+      for (var k = Math.max(0, low - 3); k < Math.min(lines.length, low + 2); k++) {
+        result += '  L' + (k+1) + ': ' + lines[k].substring(0, 200) + '\n';
+      }
+    }
+  }
+  out.textContent = result;
+} catch (e) {
+  document.getElementById('out').textContent = 'XHR Error: ' + e.message;
+}
+</script>
+</body></html>

@@ -1,0 +1,44 @@
+node_modules/
+.vercel/
+.pnpm-store/
+.turbo/
+.cache/
+.parcel-cache/
+.env
+.env.local
+.env.production
+.env.*.local
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+/* 敏感文件：Supabase/Vercel/凭证绝对不要上传到 Git */
+service-account.json
+.vapid.json
+.vapid.keys
+.local-keys.json
+keys.json
+secrets.json
+
+/* 调试/诊断脚本临时产物 */
+_extracted_script.js
+_check_syntax.js
+_check.js
+_diag.js
+_main.js
+_mobile_html.txt
+
+/* 本地备份：每个用户自己的本地数据导出（含个人隐私）不要上传 */
+backups/
+*.export.json
+*.export.csv
+个人数据导出*.json
+
+/* 可选：.gitignore 忽略本地 截图/临时图片（若需要上传请 git add -f） */
+__pycache__/
+*.pyc
+coverage/

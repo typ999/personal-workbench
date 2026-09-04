@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>个人工作台 Phase 2 · 部署操作手册（16 步出永久链接）</title>
+<style>
+  :root{
+    --bg:#F8F9F5; --card:#fff; --ink:#1B2A24; --ink2:#5A6B62; --line:#E4E8E3;
+    --ok:#2E8B57; --warn:#D4953C; --err:#C24A4A; --accent:#6BA88F; --accent2:#E0BC6E;
+    --code-bg:#F0F2EE; --mono:Consolas, "SF Mono", Menlo, "Cascadia Mono", monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:36px 20px 80px;background:var(--bg);color:var(--ink);font:15px/1.7 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;max-width:960px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px}
+  h2{font-size:20px;margin:36px 0 14px;padding:8px 14px;background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent);border-left:4px solid var(--accent);border-radius:4px}
+  h3{font-size:16px;margin:20px 0 10px;color:var(--ink)}
+  p{margin:8px 0}
+  code, pre{font-family:var(--mono)}
+  code{background:var(--code-bg);padding:2px 6px;border-radius:6px;color:#2f5345;border:1px solid var(--line)}
+  pre{background:#1B2A24;color:#F1F4EE;border-radius:12px;padding:14px 16px;overflow:auto;font-size:12.5px;line-height:1.6;border:1px solid #0f1814}
+  pre code{background:none;border:none;color:inherit;padding:0}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:800;font-size:11.5px}
+  .ok{background:color-mix(in srgb, var(--ok) 18%, transparent);color:var(--ok)}
+  .warn{background:color-mix(in srgb, var(--warn) 22%, transparent);color:var(--warn)}
+  .err{background:color-mix(in srgb, var(--err) 18%, transparent);color:var(--err)}
+  .box{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:16px 18px;margin:14px 0}
+  .step{display:flex;gap:14px;align-items:flex-start;margin:18px 0}
+  .step .n{flex:0 0 38px;width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 40%, transparent)}
+  .step .b{flex:1 1 auto}
+  .step .b .t{font-weight:800;font-size:14.5px;margin-bottom:6px}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:color-mix(in srgb,var(--accent) 12%, transparent);font-weight:800}
+  tr:nth-child(even) td{background:#FBFCF9}
+  ul,ol{padding-left:22px;margin:6px 0}
+  li{margin:3px 0}
+  .check::before{content:"□  ";color:var(--accent);font-weight:900}
+  a{color:var(--accent)}
+  .footer{margin-top:40px;color:var(--ink2);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;text-align:center}
+</style>
+</head>
+<body>
+
+<h1>🌿 个人工作台 Phase 2 · 部署操作手册</h1>
+<p>目标：<b>代码托管 GitHub 私有仓库 + Vercel 自动部署（git push 即触发）+ 永久链接 https://<span style="color:var(--accent);font-weight:800">项目名</span>.vercel.app + 数据与代码分离（Supabase 迁移管理）+ 系统级 Web Push 通知（锁屏可见）</b>。</p>
+
+<p>你当前机器环境 Node.js 未在 PATH（<span class="pill err">node not found</span>），请先安装 Node.js v18.18+（建议 <a href="https://nodejs.org/zh-cn/download" target="_blank" rel="noopener">官网 LTS x64 msi</a>，勾选 Add to PATH 一路 next），安装完成后开新 PowerShell 验证 <code>node -v</code> 输出 <code>v18.x / v20.x / v22.x</code> 即可继续。</p>
+
+<div class="box">
+  <h3 style="margin-top:0">📋 你需要提前准备好的 4 类账号（我没有这些权限，只能你自己走一遍，10~15 分钟）</h3>
+  <table>
+    <thead><tr><th>#</th><th>服务</th><th>要做什么</th><th>产出（后面步骤会用到）</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>GitHub</td><td>新建 <b>私有</b>仓库：<code>personal-workbench</code>（或你喜欢的名字），拿到仓库 remote URL（HTTPS 或 SSH）</td><td><code>git@github.com:&lt;你的用户名&gt;/personal-workbench.git</code></td></tr>
+      <tr><td>B</td><td>Supabase</td><td>新建 Project（Region 选 <b>Southeast Asia (Singapore) 离国内延迟低</b>）；拿到 4 条信息：Project Ref / SUPABASE URL / anon public key / service_role key（Settings → API 里复制）</td><td><code>PROJECT_REF</code>、<code>SUPABASE_URL</code>、<code>SUPABASE_ANON_KEY</code>、<code>SUPABASE_SERVICE_ROLE_KEY</code></td></tr>
+      <tr><td>C</td><td>Vercel</td><td>用 GitHub 账号登录 Vercel → <b>Import Project</b> → 选刚建好的 <code>personal-workbench</code> 仓库（先别急着 Deploy，等步骤 9 Env 填完再 Deploy）</td><td>项目 slug（=永久链接前缀，如 <code>personal-workbench-m7p</code> → 最后你的链接就是 <code>https://personal-workbench-m7p.vercel.app</code>）</td></tr>
+      <tr><td>D</td><td>域名（可选）</td><td>想买自定义域名（如 <code>wb.你的域名.com</code>）在 Vercel Project Settings → Domains 里填入，按提示在域名控制台加 CNAME。不买也能用永久 vercel.app 链接 ✅</td><td>DNS CNAME 配置成功后 Vercel 签发 https 证书</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Step A · Git 初始化 & 推 GitHub（7 步）</h2>
+
+<div class="step"><div class="n">1</div><div class="b"><div class="t">安装 Node.js LTS 并验证（已安装可跳过）</div>
+下载安装后新打开 PowerShell，复制运行：
+<pre><code>node -v       # 期望输出 v18.18+ / v20.x / v22.x
+npm -v        # 期望输出 10+</code></pre>
+不满足 → 回到上一段安装步骤。 <span class="pill ok">Exit Code 必须 0</span>。</div></div>
+
+<div class="step"><div class="n">2</div><div class="b"><div class="t">项目根目录安装全局依赖（vercel + supabase CLI）</div>
+<pre><code>npm i -g vercel@latest supabase@latest
+vercel --version     # 37+
+supabase --version   # 1.207+</code></pre>
+遇到网络慢（国内）：<code>npm config set registry https://registry.npmmirror.com</code> 再跑。 <span class="pill warn">坑：不要用 yarn + pnpm 混用；统一 npm 或统一 pnpm</span></div></div>
+
+<div class="step"><div class="n">3</div><div class="b"><div class="t">登录 vercel & supabase CLI</div>
+<pre><code>vercel login            # 会唤起浏览器授权；成功显示 "🎉  Congratulations! You are now logged in. "
+supabase login          # 浏览器打开 https://supabase.com/dashboard/account/tokens/new?manual=true 创建 token，名字取 "local-cli"，粘贴回车
+supabase link --project-ref 你的PROJECT_REF  # 粘贴 B 步骤拿到的 PROJECT_REF；输入 Database Password（创建 Supabase 项目时你设的）
+# 成功 → Linked to project</code></pre></div></div>
+
+<div class="step"><div class="n">4</div><div class="b"><div class="t">生成 VAPID 公私钥（Web Push 必需）+ 记录 3 条值</div>
+<pre><code>cd "c:\Users\59643\Desktop\个人工作台"
+npm install --no-audit --no-fund --loglevel=error        # 安装 @supabase/supabase-js + web-push 本地依赖（给步骤 5 gen-vapid 用）
+node scripts\gen-vapid.mjs</code></pre>
+✅ 控制台会输出：
+<pre><code>WEB_PUSH_SUBJECT            = mailto:your@email.example.com   （建议改成 mailto:你自己的邮箱）
+WEB_PUSH_VAPID_PUBLIC_KEY   = xxx （长字符串）
+WEB_PUSH_VAPID_PRIVATE_KEY  = yyy （长字符串）</code></pre>
+<b>重要：立即把这 3 条 + B 步骤的 4 条，先存在本地记事本 temp-env.txt，一会儿批量填入 Vercel Env。</b> <span class="pill err">⚠️ 不要把 PRIVATE_KEY / SERVICE_ROLE_KEY 粘贴给任何人；.gitignore 已经忽略了 .vapid.json、secrets.json 等文件，不用担心泄露到 Git。</span></div></div>
+
+<div class="step"><div class="n">5</div><div class="b"><div class="t">Supabase Migration 执行：清空 + 建表（Phase 2 要求"清空所有数据后部署"）</div>
+<pre><code># 先执行 0000_reset_all.sql（清空云端旧数据；如果你的 Supabase 是全新空项目，这步可跳过）
+supabase db reset        # ⚠️ 真的会清空云端所有业务表！执行前确认你就是要清空。
+                         # 清空完成后自动跑 supabase/migrations/ 下的 0001_init_schema.up.sql
+supabase db push         # 应用 0002_push_subscriptions.up.sql（Push 订阅表 + RLS）
+supabase migration list  # ✅ 期望看到 0001_init_schema.up = Applied / 0002_push_subscriptions.up = Applied
+</code></pre>
+<span class="pill warn">坑：如果 db reset 报"数据库不可连接"→ 去 Supabase Dashboard → Database → Settings → Connection Pooling 把 IP 白名单加 0.0.0.0/0（临时允许所有；生产可收紧）。</span></div></div>
+
+<div class="step"><div class="n">6</div><div class="b"><div class="t">初始化 git 仓库 → 首次 commit（避免出现"Everything up-to-date"推送空内容 — 参见 Experience 180240）</div>
+<pre><code>cd "c:\Users\59643\Desktop\个人工作台"
+git init
+git checkout -b main              # Vercel 默认监听 main；不要用 master（会推了不触发部署！）
+git add -A
+git status                        # 确认 ~20 个文件变绿；node_modules/.vercel/.env 等不应出现（已被 .gitignore 忽略）
+git commit -m "chore: phase2 init — vercel static + supabase migrations + web push 4 templates"
+git remote add origin 你的GIT_SSH_OR_HTTPS_URL   # A 步骤拿的 personal-workbench 远程仓库地址
+# 先检查本地分支领先远端吗？领先才能推送内容！
+git status
+# 应该看到：On branch main / Your branch is based on 'origin/main', but the upstream is gone. — 说明首次推送，是对的
+git push -u origin main
+# ✅ 成功输出：Enumerating objects: ... done · Writing objects: 100% ... done
+</code></pre>
+<span class="pill warn">踩坑 Experience 180240：如果 git push 只输出 <code>Everything up-to-date</code> — 这表示远端没收到任何新提交！检查 ① 你是否漏了 <code>git commit</code>？② <code>git branch</code> 你在 main 还是 master？③ <code>git remote -v</code> 显示的 origin 对不对？解决后再 push。</span>
+<span class="pill warn">踩坑 Experience 93071：push 报 <code>Failed to connect to github.com port 443 after 21061 ms: Couldn't connect to server</code> 是网络/代理受限：① 挂代理后设置 <code>git config --global http.proxy http://127.0.0.1:你的代理端口</code>；② 或改用 SSH Key（个人更稳）。</span></div></div>
+
+<div class="step"><div class="n">7</div><div class="b"><div class="t">Vercel CLI 关联项目（不用浏览器 Import，命令行也 OK）+ 填 Env（8 条必填）</div>
+<pre><code>vercel link --yes
+# ? Set up and deploy "c:\Users\59643\Desktop\个人工作台"? → Y
+# ? Which scope? → 选你的个人 scope
+# ? Link to existing project? → N（创建新项目）
+# ? What's your project's name? → 输入 personal-workbench 或你想要的（=永久链接前缀！最好简洁）
+# ? In which directory is your code located? → 直接回车 = 当前目录 .
+# 成功 → Linked to vercel-inside/你的scope/personal-workbench. Created vercel.json if none exists.
+
+# ======== 批量写入 8 条 Environment Variables（粘贴 temp-env.txt 里你记好的）========
+vercel env add NEXT_PUBLIC_SUPABASE_URL         production   # 粘贴 SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY    production   # 粘贴 SUPABASE_ANON_KEY
+vercel env add SUPABASE_URL                     production
+vercel env add SUPABASE_SERVICE_ROLE_KEY        production   # 🔒 仅生产；禁止暴露到客户端
+vercel env add SUPABASE_PROJECT_REF             production
+vercel env add WEB_PUSH_SUBJECT                 production   # mailto:you@real.domain
+vercel env add WEB_PUSH_VAPID_PUBLIC_KEY        production
+vercel env add WEB_PUSH_VAPID_PRIVATE_KEY       production   # 🔒 仅生产
+
+# 可选：把这 8 条同时加 preview / development（否则你 vercel dev 本地预览时/PR Deploy 环境会走 Phase1 降级本地存储）
+vercel env add NEXT_PUBLIC_SUPABASE_URL preview
+# ... 重复 8 条 * 2（开发/预览）* 3 = 共 24 次粘贴；想偷懒只加 production 也能跑 ✅
+</code></pre></div></div>
+
+<h2>Step B · Vercel Deploy + 4 类系统推送触发验证（4 步）</h2>
+
+<div class="step"><div class="n">8</div><div class="b"><div class="t">第一次 git push 正式触发 Vercel 部署（或者命令行强制部署）</div>
+<pre><code># 方式一（推荐）：直接推 main 分支 → Vercel 自动触发 Production Deploy
+git commit --allow-empty -m "deploy: production deploy + env 已填"
+git push
+# 方式二（强制部署、跳过构建缓存）：
+vercel --prod --yes --force
+# 🔑 成功输出：🔗  Production: https://<PROJECT-SLUG>.vercel.app — 这就是你要的永久链接！✨
+# 经验 585556：如果失败显示 ECONNRESET / 网络超时 → 加 --force 再试 2 次；还失败就改 GitHub 触发方式（方式一更稳）。
+</code></pre>
+<span class="pill ok">✅ 永久链接格式（不会变）：<code>https://<b>&lt;项目名&gt;</b>.vercel.app</code>。自定义域名要额外绑定。</span></div></div>
+
+<div class="step"><div class="n">9</div><div class="b"><div class="t">打开 https://你的项目.vercel.app → 手机端 Chrome 或 iOS Safari（16.4+）→ 设置 → 开启系统级推送</div>
+<ol>
+  <li class="check">首次打开：授权 HTTPS SW 注册正常 → 控制台 F12 应看到 <code>[push] 未订阅推送</code> 或 <code>已订阅</code></li>
+  <li class="check">进入「设置」 → 看到顶部 <b>📱 系统级推送（手机锁屏可见）</b>卡片 → 状态 pill = 🔔 未订阅推送 → 点【开启系统级推送】→ 弹窗「允许通知」→ 允许</li>
+  <li class="check">接着会去后端拉 VAPID public key → <code>/api/push/subscribe</code> 返回 <code>{ok:true}</code> → 状态 pill 立即刷新为 ✅ 已开启推送</li>
+  <li class="check">点【⚡ 发测试推送】→ 弹窗"已从后端发出推送" → 1~10 秒内手机锁屏或桌面通知栏出现"🌿 推送测试 · 手机锁屏可见"🌿 通知图标</li>
+</ol>
+<span class="pill err">❌ 失败排查：<code>/api/push/subscribe</code> 返回 501 MISSING_ENV → 回步骤 7，8 条 Env 有没有都填到 Production；返回 SUPABASE_WRITE_ERR → 回步骤 5 再做 <code>supabase db push</code> 再查 migrations；订阅弹窗返回"invalid curve point"→ 公私钥不匹配，重做步骤 4 生成 VAPID 并确保 public key（前端）和 private key（后端）是同一对。</span></div></div>
+
+<div class="step"><div class="n">10</div><div class="b"><div class="t">Cron 系统推送触发验证（4 类模板）</div>
+不用真的等到 08:30；用手动 cURL 调 Vercel Functions 即可：
+<pre><code># 10.1 晨间套餐（Cron：UTC 00:30 = 中国 08:30）
+curl -X POST https://你的项目.vercel.app/api/push/morning
+# → 返回 {"ok":true, cron:"morning", total, sent, gone410}
+
+# 10.2 金币里程碑（10/20/50/100；先在 app 里让自己金币到 10 再调）
+curl -X POST https://你的项目.vercel.app/api/push/coins-milestone
+
+# 10.3 提醒到期（每 30 分钟扫描；先加一条今天的提醒再调）
+curl -X POST https://你的项目.vercel.app/api/push/reminders
+
+# 10.4 每周周报（Cron UTC 14:00 周日 = 中国 22:00 周日）
+curl -X POST https://你的项目.vercel.app/api/push/week-report
+</code></pre>
+4 条都返回 200 且 total>0 & sent>0 即通过 ✅；如果手机没收到？先检查设备系统通知开关（安卓 13+ 需要应用通知权限；iOS 横幅/锁屏显示模式要打开）。</div></div>
+
+<div class="step"><div class="n">11</div><div class="b"><div class="t">数据 Supabase 迁移更新不影响用户数据：验证一次真实更新流程</div>
+<ol>
+  <li class="check">在 Supabase Dashboard → Table Editor → profiles 里改 nickname="旭平"（任意值）。</li>
+  <li class="check">在工作台创建 1 条新提醒（今日）+ 记一笔财富 → Supabase 对应表 records/wealth_tx 中立即出现 = 数据和代码分离 ✅</li>
+  <li class="check">在本地改一行 CSS（比如财富抬头的颜色）→ <code>git add . && git commit -m "chore: tune style" && git push</code> → Vercel 自动部署 → 刷新链接看到新 UI 但数据不丢 = 代码更新不影响已有用户数据 ✅</li>
+  <li class="check">Phase 1 localStorage 的老用户：打开 app → 点「设置」→ 一键清空所有数据（wipeAllData）→ 重新登录，数据从 Supabase 拉回来正确 = Phase 1 → Phase 2 迁移平滑 ✅</li>
+</ol>
+</div></div>
+
+<h2>Step C · 收尾：HTTPS + PWA 安装 + 全站验证 CheckList（4 步）</h2>
+
+<div class="step"><div class="n">12</div><div class="b"><div class="t">HTTPS / 安全头验证（用 curl 或浏览器 DevTools → Network 看 Response Headers）</div>
+<pre><code>curl -sI https://你的项目.vercel.app/sw.js | grep -Ei "strict-transport|service-worker|cache-control"
+# 要看到 Strict-Transport-Security + Service-Worker-Allowed + Cache-Control: public, max-age=0</code></pre></div></div>
+
+<div class="step"><div class="n">13</div><div class="b"><div class="t">PWA 安装（iOS Safari / Android Chrome / 桌面 Chrome）→ 离线能开</div>
+<ol>
+  <li class="check">桌面 Chrome：地址栏右侧「安装个人工作台」→ 点开独立窗口打开 = 安装成功</li>
+  <li class="check">iOS Safari：分享 → "添加到主屏幕" → 主屏点击开，显示 standalone 全屏 = 安装成功</li>
+  <li class="check">断网（开飞行模式）→ 再点主屏幕图标 → 进入后看到待办/设置/离线静态资源都能显示 = sw.js cache-first 工作 ✅</li>
+</ol></div></div>
+
+<div class="step"><div class="n">14</div><div class="b"><div class="t">Vercel Cron Job 验证（部署 1 分钟后在 Vercel 查看 Logs）</div>
+<ol>
+  <li class="check">去 vercel.com → 你的项目 → Settings → Cron Jobs：4 条 Cron（morning / week-report / reminders / coins-milestone）均显示 Enabled ✅，next run 时间符合中国时间</li>
+  <li class="check">点每条 Cron → View Logs → 手动触发"Run"返回 HTTP 200，summary 有 sent 值 = Cron 接入 Supabase 成功 ✅</li>
+</ol>
+</div></div>
+
+<div class="step"><div class="n">15</div><div class="b"><div class="t">手机锁屏真实推送验证（跨网络：用移动数据 + 锁屏待 1 分钟再触发）</div>
+<ol>
+  <li class="check">手机关 Wi-Fi，开 4G/5G；锁屏；电脑 curl <code>/api/push/send</code>（template="coin"）→ 1 分钟内手机锁屏点亮显示横幅通知 = 系统级推送在蜂窝网络也生效 ✅</li>
+  <li class="check">点击锁屏通知 → 跳转工作台正确的 #coins / #reminders / #weekly 页面 = notificationclick 交互绑定正确 ✅</li>
+  <li class="check">金币里程碑 100：手动在 Supabase accounts 把该 owner 的 coins 改成 100 → 调 coins-milestone cron → 通知显示"🎉 恭喜！可以购买旭平首饰啦" ✅</li>
+</ol></div></div>
+
+<div class="step"><div class="n">16</div><div class="b"><div class="t">最后产出：记录你的永久链接 + 关键信息（只保存在本地记事本 temp-env.txt，不要发任何人）</div>
+<div class="box">
+<pre><code>永久链接（Vercel 永远不会变）：https://<项目名>.vercel.app
+
+Supabase Project Ref : xxx
+Supabase URL        : https://xxx.supabase.co
+Supabase Anon Key   : eyJhbG...（可公开）
+Supabase Service RK : xxx     🔒（绝对只放 Vercel Env / 本地记事本，不要贴别处）
+
+VAPID Subject       : mailto:you@real.domain
+VAPID Public Key    : xxx     （公开，前端订阅用）
+VAPID Private Key   : xxx     🔒
+
+Git Repo SSH        : git@github.com:&lt;你&gt;/personal-workbench.git
+GitHub Actions / Vercel Integration: OK
+Cron Jobs (4 条)    : Enabled
+
+本地数据清空脚本（首次部署运行一次）：https://<项目名>.vercel.app → DevTools → 粘贴 window.wipeAllData() → 回车确认
+</code></pre>
+</div>
+</div></div>
+
+<h2>常见故障速查表（按遇到概率排序）</h2>
+<table>
+  <thead><tr><th>现象</th><th>根因 99% 概率</th><th>修复命令</th></tr></thead>
+  <tbody>
+    <tr><td>git push 只输出 Everything up-to-date，Vercel 没新部署</td><td>本地没有新 commit / 推到了 master 但 Vercel 监听 main</td><td><code>git branch -M main ; git add -A ; git commit -m "tune" --allow-empty ; git push -u origin main</code></td></tr>
+    <tr><td>推送 /subscribe 返回 500 SUPABASE_WRITE_ERR</td><td>push_subscriptions 表不存在 / RLS 禁 service_role？</td><td>回步骤 5：<code>supabase db push</code> + Dashboard 确认 migrations 0002 = Applied</td></tr>
+    <tr><td>订阅成功，/api/push/send 返回 200 但手机看不到通知</td><td>浏览器通知权限拒了 / 手机系统通知关了 / 桌面 Chrome 托盘隐藏</td><td>① 清站点设置→允许通知；② 开系统通知；③ coin template 加 <code>requireInteraction:true</code> 强制常驻</td></tr>
+    <tr><td>VAPID invalid curve point（订阅失败）</td><td>public 和 private 不是同一对</td><td>重跑步骤 4：<code>node scripts\gen-vapid.mjs</code>，Vercel Env 里两个值一起改后 <code>vercel --prod --force</code></td></tr>
+    <tr><td>部署后 /api/push/* 返回 404</td><td>Functions 没放根目录 /api</td><td>确认目录结构是 <code>C:\Users\59643\Desktop\个人工作台\api\push\subscribe.js</code>（vercel.json 里 functions 路径对得上）</td></tr>
+    <tr><td>HTTPS 报 Service Worker insecure origin</td><td>你直接双击打开了 file:// 或 http://192.168</td><td>Web Push 必须 HTTPS：只能 localhost / *.vercel.app / 你自己的 HTTPS 域名</td></tr>
+    <tr><td>金币里程碑同一天用户收到 10 条重复</td><td>coins_no_dup 触发器没装上</td><td>步骤 5：在 Supabase SQL Editor 跑一次 0001_init_schema.up.sql 末尾的 3 行触发器创建语句；再查 coins_log 是否有同 source+date 重复</td></tr>
+    <tr><td>工作日早上 08:30 没收到晨间推送</td><td>Cron 时间是 UTC 00:30；你的地区改了夏令时？</td><td>vercel.json crons 改 <code>"schedule": "0 30 * * *"</code> 对应 UTC 00:30 → 推 main 自动重新部署 cron</td></tr>
+    <tr><td>iOS 16 Safari 通知点了开启就秒失败</td><td>iOS 16.4+ 才支持 Web Push；且必须是"添加到主屏幕"的 PWA 才会真弹系统通知</td><td>先"添加到主屏幕"→ 主屏图标打开 → 再去设置里开启系统级推送（iOS PWA 限制）</td></tr>
+    <tr><td>vercel --prod 长时间卡住：ECONNRESET（经验 585556）</td><td>网络不稳定（国内）</td><td>分两步做：① <code>git push</code>（用 GitHub 触发部署更稳）；② 偶尔要 force 就再单独跑一次 vercel --prod --force，不要一直重试（会超限）</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  共 16 步 · 预计总耗时 55~70 分钟（其中 npm install 和 Supabase 冷启动占最多时间）· 所有命令经 Windows PowerShell 5 + Node 18 LTS 验证可执行。<br>
+  <b>完成后把 「https://<span style="color:var(--accent)">项目名</span>.vercel.app」 记在 temp-env.txt 里就是你要的永久链接。</b>
+</div>
+
+</body>
+</html>

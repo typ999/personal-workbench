@@ -1,0 +1,33 @@
+# Supabase CLI Configuration — 手动生成，修复 Windows 下 `supabase link` 未创建 config.toml 的 bug
+# Generated manually for project: 596435729@qq.com's Project
+# Project Ref / Project ID (必填，status / reset / push 都读这个)
+project_id = "dfurltpxfgmpvucqtylg"
+
+# Remote PostgreSQL 连接参数（和 Supabase Dashboard → Settings → Database 里一致）
+[db]
+  host = "db.dfurltpxfgmpvucqtylg.supabase.co"
+  port = 6543   # Supabase Cloud 推荐用 PgBouncer 端口 6543（稳定，不会断连）；连接失败可切 5432 直连
+  shadow_port = 6543
+  pool_timeout = 30
+  connection_timeout = 30
+
+# 项目外链配置 (可填可不填，填了方便本地浏览器跳转)
+[project]
+  ref = "dfurltpxfgmpvucqtylg"
+  region = "southeast-1"  # 根据你创建项目时选的 Region；新加坡 southeast-1，美国-east-1，西欧-west-1
+
+# 本地开发（我们不跑本地 Supabase Docker，所以这部分保留默认值不动）
+[api]
+  port = 54321
+  schemas = ["public","extensions","storage","graphql_public"]
+  max_rows = 1000
+  extra_search_path = ["extensions"]
+
+[studio]
+  port = 54323
+  schema = "public"
+
+[local_smtp]
+  port = 54324
+  smtp_port = 54325
+  pop_port = 54326
